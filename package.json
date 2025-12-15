@@ -1,0 +1,7 @@
+{
+  "name": "drawing room",
+  "dependencies": {
+    "cloudinary": "^1.41.0",
+    "formidable": "^3.5.1"
+  }
+}

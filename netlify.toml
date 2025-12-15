@@ -1,0 +1,9 @@
+# netlify.toml 文件
+[build]
+  # 声明函数代码所在的目录
+  functions = "api" 
+  # 网站的静态文件所在的目录 (您的 public 文件夹)
+  publish = "public" 
+
+[functions]
+  node_bundler = "esbuild"
