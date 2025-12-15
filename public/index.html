@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>圣诞照片墙上传</title>
+</head>
+<body>
+    <h1>上传您的圣诞照片</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="photo" accept="image/*" required>
+        <button type="submit">上传到 Cloudinary</button>
+    </form>
+    <p id="message"></p>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const form = event.target;
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = '正在上传中，请稍候...';
+
+            try {
+                // 调用 Netlify Function，路径为 /.netlify/functions/ + 文件名 (upload)
+                const response = await fetch('/.netlify/functions/upload', {
+                    method: 'POST',
+                    body: new FormData(form) // 使用 FormData 发送 multipart/form-data
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageElement.textContent = '🎉 上传成功！图片 URL: ' + result.url;
+                    form.reset();
+                } else {
+                    // 企业级处理：抛出后端返回的错误信息
+                    throw new Error(result.msg || '上传失败。');
+                }
+            } catch (error) {
+                messageElement.textContent = '❌ 错误: ' + error.message;
+                console.error('上传过程中发生错误:', error);
+            }
+        });
+    </script>
+</body>
+</html>
