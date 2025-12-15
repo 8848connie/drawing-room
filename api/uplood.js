@@ -1,7 +1,7 @@
-// api/upload.js (修正和优化版本)
+// api/upload.js (开头部分修改)
 const cloudinary = require('cloudinary').v2;
 const formidable = require('formidable');
-const { Writable } = require('stream'); // 引入 Node.js 流模块
+const { Client } = require('pg'); // === 核心修正：添加 pg 依赖 ===
 
 // 配置 Cloudinary，密钥将从 Netlify 环境变量中自动加载
 cloudinary.config({
@@ -69,6 +69,31 @@ exports.handler = async (event) => {
       tags: ['photowall', 'christmas', uploaderName]
     });
 
+    // === 核心新增：写入数据库 ===
+    const client = new Client({
+        connectionString: process.env.NETLIFY_DATABASE_URL, 
+    });
+    
+    try {
+        await client.connect();
+        const uploaderName = "从 formidable 解析出的名字"; // 请确保从 formidable 的 fields 中正确获取名字
+        
+        const insertQuery = `
+            INSERT INTO photos(photo_url, uploader_name, timestamp) 
+            VALUES($1, $2, $3);
+        `;
+        const values = [uploadResult.secure_url, uploaderName, Date.now()];
+        
+        await client.query(insertQuery, values);
+        
+    } catch (dbError) {
+        console.error('数据库写入失败:', dbError);
+        // 警告：即使数据库写入失败，我们仍然允许 Cloudinary 上传成功。
+    } finally {
+        if (client) {
+            await client.end();
+        }
+    }
     // 3. 返回上传成功的信息和 Cloudinary URL
     return {
       statusCode: 200,
