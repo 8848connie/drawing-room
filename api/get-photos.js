@@ -1,28 +1,44 @@
-// api/get-photos.js (新增文件)
-// 假设 Netlify DB SDK 存在
-const { getRecords } = require('netlify-data-sdk'); 
+// api/get-photos.js (修正版本)
+const { Client } = require('pg');
 
 exports.handler = async (event) => {
     if (event.httpMethod !== 'GET') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
-    try {
-        // 假设我们从名为 'photos' 的表中获取所有记录
-        const photos = await getRecords('photos'); 
+    // 严谨性：从 Netlify 环境变量获取连接 URL
+    const client = new Client({
+        connectionString: process.env.NETLIFY_DATABASE_URL, 
+    });
 
-        // 整理数据，只返回 URL 和名字
-        const photoList = photos.map(record => ({
-            url: record.photoUrl, 
-            name: record.uploaderName,
-            timestamp: record.timestamp
-        })).sort((a, b) => b.timestamp - a.timestamp); // 按时间倒序排列
+    try {
+        await client.connect();
+        
+        // 1. 确保 photos 表已存在。如果不存在，部署后您可能需要手动创建。
+        // 创建表（首次运行）：
+        /*
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS photos (
+                id SERIAL PRIMARY KEY,
+                photo_url TEXT NOT NULL,
+                uploader_name VARCHAR(255),
+                timestamp BIGINT
+            );
+        `);
+        */
+        
+        // 2. 读取所有照片记录
+        const result = await client.query('SELECT photo_url, uploader_name, timestamp FROM photos ORDER BY timestamp DESC');
+
+        const photoList = result.rows.map(row => ({
+            url: row.photo_url, 
+            name: row.uploader_name,
+            timestamp: row.timestamp
+        }));
 
         return {
             statusCode: 200,
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(photoList),
         };
 
@@ -32,5 +48,10 @@ exports.handler = async (event) => {
             statusCode: 500,
             body: JSON.stringify({ msg: '无法加载照片历史记录', error: error.message }),
         };
+    } finally {
+        // 严谨性：确保关闭数据库连接
+        if (client) {
+            await client.end();
+        }
     }
 };
