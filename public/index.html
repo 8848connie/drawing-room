@@ -2,44 +2,137 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>圣诞照片墙上传</title>
-</head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎄 宝的圣诞照片墙 🎁</title>
+  <title>🎁 Christmas photo wall </title>
+    </head>
 <body>
-    <h1>上传您的圣诞照片</h1>
-    <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" name="photo" accept="image/*" required>
-        <button type="submit">上传到 Cloudinary</button>
-    </form>
-    <p id="message"></p>
+    <header>
+        <h1 id="welcome-message">加载中...</h1>
+        <p>🎉 欢迎来到我们专属的圣诞回忆空间！</p>
+    </header>
+
+    <main>
+        <h2>🖼️ 朋友们上传的照片</h2>
+        <div id="photo-gallery" class="gallery">
+            <p>照片加载中...</p>
+        </div>
+
+        <hr>
+
+        <h2>📸 分享你的圣诞瞬间</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="hidden" id="uploader-name" name="uploader-name"> 
+
+            <label for="photo-file">选择照片：</label>
+            <input type="file" id="photo-file" name="photo" accept="image/*" required>
+            
+            <button type="submit" id="submit-btn">上传并分享</button>
+            <p id="message" style="margin-top: 10px;"></p>
+        </form>
+    </main>
 
     <script>
-        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+        const UPLOAD_API_URL = '/.netlify/functions/upload';
+        let globalUserName = ''; // 存储从提示框获取的名字
+
+        // 页面加载完成后立即执行
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. 欢迎提示框逻辑
+            let userName = '';
+            // 循环直到输入非空名字
+            while (userName === null || userName.trim() === '') {
+                userName = prompt('请输入您的名字：');
+                if (userName === null) {
+                    userName = '朋友';
+                    break;
+                }
+            }
+            
+            globalUserName = userName; // 存储到全局变量
+            
+            // 将名字显示在欢迎语中
+            document.getElementById('welcome-message').textContent = `${globalUserName} 圣诞快乐！`;
+            
+            // 将名字设置到隐藏的表单字段中，以便上传时一同发送
+            document.getElementById('uploader-name').value = globalUserName;
+
+            // 2. 监听上传表单
+            document.getElementById('uploadForm').addEventListener('submit', handleUpload);
+            
+            // 3. 初始加载照片（暂时省略，等您完成 get-photos 函数后再添加）
+            // loadPhotos(); 
+        });
+
+        // 处理上传逻辑
+        async function handleUpload(event) {
             event.preventDefault();
             const form = event.target;
             const messageElement = document.getElementById('message');
+            const submitBtn = document.getElementById('submit-btn');
+
             messageElement.textContent = '正在上传中，请稍候...';
+            submitBtn.disabled = true; // 上传中禁用按钮
 
             try {
-                // 调用 Netlify Function，路径为 /.netlify/functions/ + 文件名 (upload)
-                const response = await fetch('/.netlify/functions/upload', {
+                // FormData 会自动包含隐藏的 'uploader-name' 字段和 'photo' 文件
+                const response = await fetch(UPLOAD_API_URL, {
                     method: 'POST',
-                    body: new FormData(form) // 使用 FormData 发送 multipart/form-data
+                    body: new FormData(form) // 发送表单数据，无需手动添加 Content-Type
                 });
 
-                const result = await response.json();
+                // 检查响应状态码是否在 200-299 范围内
+                const result = await response.json(); 
 
                 if (response.ok) {
-                    messageElement.textContent = '🎉 上传成功！图片 URL: ' + result.url;
+                    // 后端返回的 JSON 中应该有 name 字段
+                    const uploaderName = result.name || globalUserName; 
+                    messageElement.textContent = `🎉 上传成功！感谢 ${uploaderName} 的分享！ (URL: ${result.url})`;
+                    
+                    // 模拟实时刷新：将新上传的图片添加到展示区顶部
+                    appendPhotoToGallery(result.url, uploaderName, true);
+
                     form.reset();
                 } else {
-                    // 企业级处理：抛出后端返回的错误信息
-                    throw new Error(result.msg || '上传失败。');
+                    // 后端（upload.js）会返回包含错误信息的 JSON
+                    // 比如: { msg: '上传处理失败', error: '文件解析失败' }
+                    throw new Error(result.error || result.msg || '上传失败，后端服务返回错误。');
                 }
+
             } catch (error) {
-                messageElement.textContent = '❌ 错误: ' + error.message;
+                // 捕获所有网络错误或手动抛出的错误
+                messageElement.textContent = `❌ 错误: ${error.message}`;
                 console.error('上传过程中发生错误:', error);
+            } finally {
+                submitBtn.disabled = false; // 重新启用按钮
             }
-        });
+        }
+        
+        // 辅助函数：将图片添加到 DOM
+        function appendPhotoToGallery(url, name, prepend = false) {
+            const photoGallery = document.getElementById('photo-gallery');
+            if (!photoGallery) return;
+
+            const photoDiv = document.createElement('div');
+            photoDiv.className = 'photo-item'; // 可以用来写 CSS 样式
+
+            const imgElement = document.createElement('img');
+            imgElement.src = url;
+            imgElement.alt = `${name} 的圣诞照片`;
+            imgElement.style.maxWidth = '300px'; // 临时样式，方便查看
+
+            const caption = document.createElement('p');
+            caption.textContent = `来自: ${name}`;
+
+            photoDiv.appendChild(imgElement);
+            photoDiv.appendChild(caption);
+
+            if (prepend && photoGallery.firstChild) {
+                photoGallery.insertBefore(photoDiv, photoGallery.firstChild);
+            } else {
+                photoGallery.appendChild(photoDiv);
+            }
+        }
     </script>
 </body>
 </html>
