@@ -1,9 +1,11 @@
-# netlify.toml 文件
 [build]
-  # 声明函数代码所在的目录
   functions = "api" 
-  # 网站的静态文件所在的目录 (您的 public 文件夹)
   publish = "public" 
 
 [functions]
+  # 强制使用 esbuild 打包器
   node_bundler = "esbuild"
+
+# 为 'upload' 函数单独设置超时时间 (最安全的方式)
+[functions.upload]
+  timeout = 20
