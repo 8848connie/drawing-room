@@ -1,9 +1,13 @@
-# netlify.toml 文件
 [build]
-  # 声明函数代码所在的目录
+  # 确保函数目录是 api
   functions = "api" 
-  # 网站的静态文件所在的目录 (您的 public 文件夹)
+  # 确保发布目录是 public
   publish = "public" 
 
 [functions]
+  # 强制使用 esbuild 打包器
   node_bundler = "esbuild"
+  # 显式设置函数的超时时间，防止因上传过慢导致的 500 错误
+  timeout = 20 
+
+# 如果您之前有任何 [dev] 或 [[redirects]] 部分，请暂时移除或确认无误。
