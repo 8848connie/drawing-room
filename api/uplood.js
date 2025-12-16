@@ -1,121 +1,102 @@
-// api/upload.js (开头部分修改)
+// api/upload.js (使用 busboy-body-parser 适配器的最终修正版本)
+
 const cloudinary = require('cloudinary').v2;
-const formidable = require('formidable');
-const { Client } = require('pg'); // === 核心修正：添加 pg 依赖 ===
+const { Client } = require('pg');
+// 引入新的文件流解析器
+const bodyParser = require('busboy-body-parser'); 
 
-// 配置 Cloudinary，密钥将从 Netlify 环境变量中自动加载
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-// 核心修正：创建 Formidable 可接受的事件对象解析器
-// Netlify Functions 的事件对象不是标准的 Node.js Request 对象，需要适配。
-const fileParse = (event) => new Promise((resolve, reject) => {
-    // 创建一个模拟的请求对象，用于 formidable.parse
-    const req = {
-        headers: event.headers,
-        method: event.httpMethod,
-        // formidable 需要一个可写流，但 Netlify 只有 body 字符串
-        // 我们创建一个空的 Writable 流来欺骗 formidable (这是社区常用的技巧)
-        pipe: () => {} 
-    };
-
-    const form = formidable({
-        multiples: false,
-        maxFileSize: 5 * 1024 * 1024,
-    });
-    
-    // 关键修正：将 Netlify 的 event 对象传入 form.parse
-    // 在 Netlify 环境中，formidable 被设计为可以接受 event 对象作为第一个参数
-    form.parse(event, (err, fields, files) => {
-        if (err) {
-            console.error("Formidable解析错误:", err);
-            return reject(new Error("文件解析失败，可能是请求体格式错误。"));
-        }
-        
-        // 'photo' 是 input 标签的 name 属性
-        // 注意：fields 和 files 返回的是数组，需要取第一个元素
-        const file = files.photo && files.photo[0]; 
-        
-        // 额外的上传者名字字段（如果您在前端添加了）
-        const uploaderName = fields['uploader-name'] ? fields['uploader-name'][0] : '匿名朋友';
-        
-        if (!file) {
-            return reject(new Error("未找到上传文件，请确保文件已选择。"));
-        }
-        
-        resolve({ file, uploaderName });
-    });
-});
-
-
-// Netlify Function 的入口函数
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
-  }
-
-  try {
-    // 1. 解析请求体，获取文件和名字
-    const { file: uploadedFile, uploaderName } = await fileParse(event);
-
-    // 2. 将文件从临时路径上传到 Cloudinary
-    // uploadedFile.filepath 包含 formidable 存储的临时文件路径
-    const uploadResult = await cloudinary.uploader.upload(uploadedFile.filepath, {
-      folder: 'christmas-photowall',
-      public_id: `${Date.now()}_${uploaderName.replace(/\s+/g, '_')}`, // 使用名字生成唯一的 public_id
-      tags: ['photowall', 'christmas', uploaderName]
-    });
-
-    // === 核心新增：写入数据库 ===
+// 辅助函数：连接数据库（防止连接泄露）
+async function runQuery(query, values) {
     const client = new Client({
         connectionString: process.env.NETLIFY_DATABASE_URL, 
     });
-    
     try {
         await client.connect();
-        const uploaderName = "从 formidable 解析出的名字"; // 请确保从 formidable 的 fields 中正确获取名字
+        const result = await client.query(query, values);
+        return result;
+    } finally {
+        if (client) {
+            await client.end();
+        }
+    }
+}
+
+
+exports.handler = async (event) => {
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: 'Method Not Allowed' };
+    }
+
+    // 严谨性：在处理之前配置 Cloudinary，使用环境变量
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+
+    try {
+        // 1. 使用 busboy-body-parser 解析 event
+        // 解析后的文件和字段会挂载到 event.body
+        await new Promise((resolve, reject) => {
+            // Netlify Functions 需要将 isBase64Encoded 设为 true 来确保正确解析
+            event.isBase64Encoded = true; 
+            
+            // 使用 bodyParser 解析 event
+            bodyParser(event, (err) => {
+                if (err) return reject(err);
+                resolve();
+            });
+        });
+
+        const file = event.files && event.files[0];
+        const uploaderName = event.body['uploader-name'] || '匿名朋友';
         
+        if (!file) {
+             // 如果文件解析失败，返回 400 状态码
+             return {
+                 statusCode: 400,
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ msg: '上传文件解析失败，请重试。' })
+             };
+        }
+
+        // 2. 将文件上传到 Cloudinary
+        // file.content 是 busboy 解析出的文件内容 (Buffer)
+        const uploadResult = await cloudinary.uploader.upload(
+            `data:${file.contentType};base64,${file.content.toString('base64')}`, // 将 Buffer 转换为 Base64 URI
+            {
+                folder: 'christmas-photowall',
+                public_id: `${Date.now()}_${uploaderName.replace(/\s+/g, '_')}`,
+                tags: ['photowall', 'christmas', uploaderName]
+            }
+        );
+
+        // 3. 写入数据库
         const insertQuery = `
             INSERT INTO photos(photo_url, uploader_name, timestamp) 
             VALUES($1, $2, $3);
         `;
         const values = [uploadResult.secure_url, uploaderName, Date.now()];
         
-        await client.query(insertQuery, values);
-        
-    } catch (dbError) {
-        console.error('数据库写入失败:', dbError);
-        // 警告：即使数据库写入失败，我们仍然允许 Cloudinary 上传成功。
-    } finally {
-        if (client) {
-            await client.end();
-        }
-    }
-    // 3. 返回上传成功的信息和 Cloudinary URL
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      // 携带上传者的名字返回，供前端使用
-      body: JSON.stringify({ 
-          url: uploadResult.secure_url, 
-          msg: 'Upload successful',
-          name: uploaderName
-      }),
-    };
+        // 使用辅助函数执行查询，隔离数据库连接代码
+        await runQuery(insertQuery, values);
 
-  } catch (error) {
-    console.error('上传功能失败:', error);
-    // 增加一个更清晰的 400 状态码来处理客户端错误
-    const statusCode = error.message.includes("未找到上传文件") ? 400 : 500;
-    
-    return {
-      statusCode: statusCode,
-      headers: { 'Content-Type': 'application/json' },
-      // 返回一个清晰的错误消息，而不是默认的 HTML 错误页面
-      body: JSON.stringify({ msg: '上传处理失败', error: error.message }),
-    };
-  }
+
+        // 4. 返回成功信息
+        return {
+            statusCode: 200,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: uploadResult.secure_url, msg: 'Upload successful', name: uploaderName }),
+        };
+
+    } catch (error) {
+        console.error('上传功能失败:', error);
+        
+        // 确保在任何崩溃时都返回有效的 JSON 错误
+        return {
+            statusCode: 500,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ msg: '服务器处理失败', error: error.message }),
+        };
+    }
 };

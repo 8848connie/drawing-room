@@ -1,11 +1,10 @@
-
 {
-  "name": "drawing room",
+  "name": "christmas-photowall",
   "version": "1.0.0",
   "description": "Christmas Photo Wall Netlify Function",
   "dependencies": {
     "cloudinary": "^1.41.0",
-    "formidable": "^3.5.1",
-    "pg": "^8.11.3" 
+    "pg": "^8.11.3",
+    "busboy-body-parser": "^0.3.2"  
   }
 }
