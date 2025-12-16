@@ -6,7 +6,6 @@
   "dependencies": {
     "cloudinary": "^1.41.0",
     "formidable": "^3.5.1",
-    // === 核心修正：添加 PostgreSQL 客户端依赖 ===
     "pg": "^8.11.3" 
   }
 }
