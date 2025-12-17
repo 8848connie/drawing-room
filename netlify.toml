@@ -4,15 +4,9 @@
 
 [functions]
   node_bundler = "esbuild"
-  # 我们把 timeout 删掉，因为 10 秒（默认）通常够用了。
-  # 如果之后真的超时，我们再用更复杂的语法加回来。
 
+# 只需要这一条核心规则，负责把前端的 /api/upload 映射到真正的函数上
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/.netlify/functions/*"
   to = "/.netlify/functions/:splat"
   status = 200
