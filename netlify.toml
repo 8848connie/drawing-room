@@ -1,23 +1,17 @@
 [build]
-  # 声明函数所在的文件夹
   functions = "api"
-  # 声明前端静态文件的文件夹
   publish = "public"
 
 [functions]
-  # 强制使用 esbuild 打包，这能让 Node.js 模块（如 pg, cloudinary）加载更稳定
   node_bundler = "esbuild"
-  # 适当延长超时时间，防止大图片上传时函数被强制关闭
-  timeout = 20
+  # 我们把 timeout 删掉，因为 10 秒（默认）通常够用了。
+  # 如果之后真的超时，我们再用更复杂的语法加回来。
 
-# 核心重定向规则：解决前端 fetch('/api/...') 导致的 404 问题
-# 它会将所有的 /api/ 请求内部转发给 Netlify Functions
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
-# 备用规则：如果前端直接访问 /.netlify/functions/，也确保其能通暢
 [[redirects]]
   from = "/.netlify/functions/*"
   to = "/.netlify/functions/:splat"
