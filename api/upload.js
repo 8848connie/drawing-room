@@ -1,11 +1,12 @@
 const cloudinary = require('cloudinary').v2;
 const { Client } = require('pg');
-const bodyParser = require('busboy-body-parser');
+const Busboy = require('busboy');
 
+// 数据库存储逻辑
 async function saveToDatabase(url, name) {
     const client = new Client({
         connectionString: process.env.NETLIFY_DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: false } // 必须开启 SSL
     });
     try {
         await client.connect();
@@ -17,8 +18,7 @@ async function saveToDatabase(url, name) {
                 timestamp BIGINT
             );
         `);
-        const query = 'INSERT INTO photos(photo_url, uploader_name, timestamp) VALUES($1, $2, $3)';
-        await client.query(query, [url, name, Date.now()]);
+        await client.query('INSERT INTO photos(photo_url, uploader_name, timestamp) VALUES($1, $2, $3)', [url, name, Date.now()]);
     } finally {
         await client.end();
     }
@@ -33,11 +33,7 @@ exports.handler = async (event) => {
 
     if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
 
-    // 1. 配置检查 (如果环境变量缺失，直接报错而不是崩溃)
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.NETLIFY_DATABASE_URL) {
-        return { statusCode: 500, headers, body: JSON.stringify({ msg: "系统配置缺失，请检查 Netlify 环境变量" }) };
-    }
-
+    // 1. 配置 Cloudinary
     cloudinary.config({
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
         api_key: process.env.CLOUDINARY_API_KEY,
@@ -45,49 +41,58 @@ exports.handler = async (event) => {
     });
 
     try {
-        // 2. 这里的处理逻辑必须非常小心，防止 NodeJsExit
-        const bodyBuffer = event.isBase64Encoded 
-            ? Buffer.from(event.body, 'base64') 
-            : Buffer.from(event.body);
+        // 2. 解析多部分表单数据 (不再依赖复杂的 body-parser)
+        const result = await new Promise((resolve, reject) => {
+            const busboy = Busboy({ headers: event.headers });
+            let fileData = null;
+            let uploaderName = '匿名圣诞老人';
 
-        const fakeReq = {
-            headers: {
-                ...event.headers,
-                'content-type': event.headers['content-type'] || event.headers['Content-Type']
-            },
-            body: bodyBuffer
-        };
+            busboy.on('file', (fieldname, file, info) => {
+                const chunks = [];
+                file.on('data', (data) => chunks.push(data));
+                file.on('end', () => { fileData = Buffer.concat(chunks); });
+            });
 
-        await new Promise((resolve) => bodyParser(fakeReq, resolve));
-        const file = fakeReq.files ? fakeReq.files[0] : null;
-        const uploaderName = fakeReq.body['uploader-name'] || '圣诞老人';
+            busboy.on('field', (fieldname, val) => {
+                if (fieldname === 'uploader-name') uploaderName = val;
+            });
 
-        if (!file) return { statusCode: 400, headers, body: JSON.stringify({ msg: "未检测到文件" }) };
+            busboy.on('finish', () => resolve({ fileData, uploaderName }));
+            busboy.on('error', (err) => reject(err));
 
-        // 3. 上传到 Cloudinary
+            // 处理 Netlify 可能进行的 Base64 编码
+            const body = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : Buffer.from(event.body);
+            busboy.end(body);
+        });
+
+        if (!result.fileData) {
+            return { statusCode: 400, headers, body: JSON.stringify({ msg: "未找到上传的图片文件" }) };
+        }
+
+        // 3. 上传到 Cloudinary (流式上传)
         const uploadResult = await new Promise((resolve, reject) => {
             const stream = cloudinary.uploader.upload_stream(
                 { folder: 'christmas-photowall' },
-                (error, result) => error ? reject(error) : resolve(result)
+                (error, res) => error ? reject(error) : resolve(res)
             );
-            stream.end(file.data); // 直接发送 Buffer，不转 Base64，减少内存占用
+            stream.end(result.fileData);
         });
 
-        // 4. 保存数据库
-        await saveToDatabase(uploadResult.secure_url, uploaderName);
+        // 4. 存入数据库
+        await saveToDatabase(uploadResult.secure_url, result.uploaderName);
 
         return {
             statusCode: 200,
             headers,
-            body: JSON.stringify({ url: uploadResult.secure_url, name: uploaderName, msg: "OK" })
+            body: JSON.stringify({ url: uploadResult.secure_url, name: result.uploaderName, msg: "OK" })
         };
 
     } catch (error) {
-        console.error("Critical Error:", error);
+        console.error("上传逻辑崩溃:", error.message);
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ msg: "处理失败", error: error.message })
+            body: JSON.stringify({ msg: "服务器忙，请稍后再试", error: error.message })
         };
     }
 };
