@@ -1,10 +1,9 @@
 {
   "name": "christmas-photowall",
   "version": "1.0.0",
-  "description": "Christmas Photo Wall Netlify Function",
   "dependencies": {
     "cloudinary": "^1.41.0",
     "pg": "^8.11.3",
-    "busboy-body-parser": "^0.3.2"  
+    "busboy": "^1.6.0"
   }
 }
