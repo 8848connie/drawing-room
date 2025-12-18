@@ -51,11 +51,11 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.2);
             position: relative;
             /* 👇 下面这里可以替换成你想要的登录窗口背景图 */
-            background-image: linear-gradient(rgba(255, 182, 193, 0.8), rgba(162, 210, 255, 0.8)), 
-                              url('https://unsplash.com/photos/a-picture-of-a-tree-with-purple-flowers-lViYLtWg_7M'); 
-            background-size: cover;
-            background-position: center;
-            border: 4px solid var(--modern-black);
+background-image: linear-gradient(rgba(255, 182, 193, 0.8), rgba(162, 210, 255, 0.8)), 
+                      url('https://images.unsplash.com/photo-1543589077-47d81606c1bf?auto=format&fit=crop&w=800&q=80'); 
+    background-size: cover;
+    background-position: center;
+    border: 4px solid var(--modern-black);
         }
 
         .auth-card h2 {
@@ -247,100 +247,107 @@
     <script>
         let currentUserName = "";
 
-        function logDebug(msg) {
-            const log = document.getElementById('debug-log');
-            log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+function logDebug(msg) {
+    const log = document.getElementById('debug-log');
+    log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+}
+
+// 处理登录逻辑
+function handleLogin() {
+    const nameInput = document.getElementById('username-input').value;
+    if (!nameInput) {
+        alert("请先输入名字哦！");
+        return;
+    }
+    currentUserName = nameInput;
+    
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    
+    document.getElementById('display-name').textContent = `${currentUserName}，圣诞快乐！`;
+    document.getElementById('display-name-en').textContent = `Merry Christmas, ${currentUserName}!`;
+    
+    logDebug(`用户 ${currentUserName} 登录成功，正在加载资源...`);
+    loadPhotos();
+}
+
+// 加载照片列表
+async function loadPhotos() {
+    try {
+        // 💡 修改点 1：使用简短的 /api 路径，配合 netlify.toml 的重定向
+        const res = await fetch('/api/get-photos'); 
+        const data = await res.json();
+        const grid = document.getElementById('photo-grid');
+        grid.innerHTML = ''; 
+
+        if (data.length === 0) {
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">雪地上还没有脚印，快去上传第一张照片吧！</p>';
+        } else {
+            data.forEach(photo => {
+                grid.innerHTML += `
+                    <div class="photo-card">
+                        <img src="${photo.url}" alt="圣诞照片">
+                        <div class="photo-info">来自：${photo.name}</div>
+                    </div>
+                `;
+            });
         }
+        logDebug("照片墙数据同步完成。");
+    } catch (err) {
+        logDebug(`❌ 加载照片墙失败: ${err.message}`);
+    }
+}
 
-        // 处理登录逻辑
-        function handleLogin() {
-            const nameInput = document.getElementById('username-input').value;
-            if (!nameInput) {
-                alert("请先输入名字哦！");
-                return;
-            }
-            currentUserName = nameInput;
-            
-            // 切换页面
-            document.getElementById('auth-overlay').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-            
-            // 设置标题
-            document.getElementById('display-name').textContent = `${currentUserName}，圣诞快乐！`;
-            document.getElementById('display-name-en').textContent = `Merry Christmas, ${currentUserName}!`;
-            
-            logDebug(`用户 ${currentUserName} 登录成功，正在加载资源...`);
-            loadPhotos();
-        }
+// 处理上传逻辑
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fileInput = document.getElementById('photo-file');
+    const submitBtn = document.getElementById('submit-btn');
+    const statusText = document.getElementById('upload-status-text');
 
-        // 加载照片列表
-        async function loadPhotos() {
-            try {
-                const res = await fetch('/.netlify/functions/get-photos');
-                const data = await res.json();
-                const grid = document.getElementById('photo-grid');
-                grid.innerHTML = ''; // 清空加载中
+    if (!fileInput.files[0]) return;
 
-                if (data.length === 0) {
-                    grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">雪地上还没有脚印，快去上传第一张照片吧！</p>';
-                } else {
-                    data.forEach(photo => {
-                        grid.innerHTML += `
-                            <div class="photo-card">
-                                <img src="${photo.url}" alt="圣诞照片">
-                                <div class="photo-info">来自：${photo.name}</div>
-                            </div>
-                        `;
-                    });
-                }
-                logDebug("照片墙数据同步完成。");
-            } catch (err) {
-                logDebug(`❌ 加载照片墙失败: ${err.message}`);
-            }
-        }
+    submitBtn.disabled = true;
+    statusText.textContent = "🟡 正在打包礼物并寄给云端...";
+    logDebug("开始上传流程...");
 
-        // 处理上传逻辑
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const fileInput = document.getElementById('photo-file');
-            const submitBtn = document.getElementById('submit-btn');
-            const statusText = document.getElementById('upload-status-text');
+    const formData = new FormData();
+    formData.append('photo', fileInput.files[0]);
+    formData.append('uploader-name', currentUserName);
 
-            if (!fileInput.files[0]) return;
-
-            submitBtn.disabled = true;
-            statusText.textContent = "🟡 正在打包礼物并寄给云端...";
-            logDebug("开始上传流程...");
-
-            const formData = new FormData();
-            formData.append('photo', fileInput.files[0]);
-            formData.append('uploader-name', currentUserName);
-
-            try {
-                const response = await fetch('/.netlify/functions/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const rawText = await response.clone().text();
-                logDebug(`服务器响应状态: ${response.status}`);
-
-                if (!response.ok) {
-                    throw new Error(`服务器拒绝了请求: ${rawText.substring(0, 50)}`);
-                }
-
-                const result = await response.json();
-                logDebug("✅ 上传成功！");
-                statusText.textContent = "🎉 成功！照片已挂上墙。";
-                loadPhotos(); // 刷新墙
-                e.target.reset();
-            } catch (err) {
-                logDebug(`❌ 上传出错: ${err.message}`);
-                statusText.textContent = "❌ 糟糕，麋鹿迷路了，请检查日志。";
-            } finally {
-                submitBtn.disabled = false;
-            }
+    try {
+        // 💡 修改点 2：路径改为 /api/upload，并增加超时处理逻辑
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
         });
+
+        const rawText = await response.clone().text();
+        logDebug(`服务器响应状态: ${response.status}`);
+
+        if (!response.ok) {
+            throw new Error(`服务器拒绝了请求: ${rawText.substring(0, 50)}`);
+        }
+
+        logDebug("✅ 服务器已确认接收，正在同步数据库...");
+        statusText.textContent = "✨ 礼物已送达！正在挂上照片墙 (2s)...";
+
+        // 💡 修改点 3：增加 2 秒延时刷新。
+        // 因为 Cloudinary 存储和数据库索引需要一点点时间，立即刷新可能看不到新图。
+        setTimeout(async () => {
+            await loadPhotos(); 
+            statusText.textContent = "🎊 圣诞墙已自动更新！";
+            logDebug("照片墙自动刷新完成");
+        }, 2000);
+
+        e.target.reset();
+    } catch (err) {
+        logDebug(`❌ 上传出错: ${err.message}`);
+        statusText.textContent = "❌ 糟糕，麋鹿迷路了，请重试。";
+    } finally {
+        submitBtn.disabled = false;
+    }
+});
     </script>
 </body>
 </html>
