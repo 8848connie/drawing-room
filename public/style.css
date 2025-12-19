@@ -6,38 +6,120 @@
     --modern-black: #2d3436;
 }
 
-body { margin: 0; padding: 0; background: var(--soft-pink); overflow-x: hidden; font-family: 'Segoe UI', sans-serif; }
+body { 
+    margin: 0; padding: 0; background: var(--soft-pink); 
+    overflow-x: hidden; font-family: 'Segoe UI', 'ZCOOL KuaiLe', sans-serif; 
+}
 
-/* --- 登录卡片 --- */
-#auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.auth-card { background: white; padding: 40px; border-radius: 20px; text-align: center; border: 4px solid var(--modern-black); box-shadow: 10px 10px 0 var(--christmas-red); }
-.lang-switch { margin-bottom: 10px; cursor: pointer; font-weight: bold; color: var(--christmas-green); }
-.auth-card input { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid var(--modern-black); border-radius: 15px; box-sizing: border-box; }
+/* =========================================
+   1. 登录验证层 (Beautified)
+   ========================================= */
+#auth-overlay { 
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85); 
+    display: flex; justify-content: center; align-items: center; z-index: 1000; 
+}
 
-/* --- 一体化圣诞树转场 (Clip-path 绘制) --- */
-#transition-layer { position: fixed; inset: 0; background: var(--christmas-green); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; transition: opacity 0.8s; }
+.auth-card { 
+    background: white; padding: 40px; border-radius: 20px; text-align: center; 
+    border: 4px solid var(--modern-black); 
+    box-shadow: 10px 10px 0 var(--christmas-red); 
+}
+
+.lang-switch { 
+    margin-bottom: 10px; cursor: pointer; font-weight: bold; 
+    color: var(--christmas-green); font-size: 0.9rem;
+}
+
+/* 输入框美化 */
+#username-input { 
+    width: 100%; padding: 12px 20px; margin: 20px 0 10px 0; 
+    border: 3px solid var(--modern-black); border-radius: 15px; 
+    font-size: 1rem; box-sizing: border-box; transition: all 0.3s;
+}
+#username-input:focus { border-color: var(--christmas-red); outline: none; background: #fffdfd; }
+
+/* 重点：3D Q弹登录按钮 */
+#t-login-btn {
+    background-color: var(--christmas-red); color: white;
+    padding: 14px 40px; font-size: 1.2rem; font-weight: 800;
+    border: 3px solid var(--modern-black); border-radius: 50px;
+    cursor: pointer; box-shadow: 5px 5px 0px var(--modern-black);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    margin-top: 15px; letter-spacing: 2px; width: 100%;
+}
+#t-login-btn:hover {
+    background-color: var(--christmas-green);
+    transform: translateY(-4px);
+    box-shadow: 8px 8px 0px var(--modern-black);
+}
+#t-login-btn:active {
+    transform: translateY(4px) translateX(4px);
+    box-shadow: 0px 0px 0px var(--modern-black);
+}
+
+/* =========================================
+   2. 一体化圣诞树转场 (Clip-path)
+   ========================================= */
+#transition-layer { 
+    position: fixed; inset: 0; background: var(--christmas-green); 
+    display: none; flex-direction: column; justify-content: center; 
+    align-items: center; z-index: 2000; transition: opacity 0.8s; 
+}
 .tree-wrap { position: relative; width: 150px; text-align: center; animation: sway 2s infinite ease-in-out; }
-.integrated-tree { width: 120px; height: 160px; background: var(--tree-white); margin: 0 auto; clip-path: polygon(50% 0%, 80% 30%, 70% 30%, 90% 60%, 80% 60%, 100% 100%, 0% 100%, 20% 60%, 10% 60%, 30% 30%, 20% 30%); }
-.star-top { width: 30px; height: 30px; background: gold; margin: 0 auto -5px; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+.integrated-tree { 
+    width: 120px; height: 160px; background: var(--tree-white); margin: 0 auto; 
+    clip-path: polygon(50% 0%, 80% 30%, 70% 30%, 90% 60%, 80% 60%, 100% 100%, 0% 100%, 20% 60%, 10% 60%, 30% 30%, 20% 30%); 
+}
+.star-top { 
+    width: 30px; height: 30px; background: gold; margin: 0 auto -5px; 
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); 
+}
 .trunk { width: 20px; height: 20px; background: #5d4037; margin: 0 auto; }
 @keyframes sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
 
-/* --- 粒子效果 --- */
+/* 物理粒子样式 */
 .snowflake { position: absolute; background: white; border-radius: 50%; pointer-events: none; z-index: 2001; }
 .falling-star { position: absolute; color: gold; pointer-events: none; z-index: 2002; filter: drop-shadow(0 0 5px gold); }
 
-/* --- 拍立得照片卡片 --- */
+/* =========================================
+   3. 拍立得照片卡片
+   ========================================= */
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 35px; padding: 40px; }
-.photo-card { background: white; padding: 15px 15px 45px 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); border: 1px solid #ddd; transition: transform 0.3s ease; }
-.photo-card:hover { transform: scale(1.05) rotate(0deg) !important; z-index: 10; }
-.photo-card img { width: 100%; height: 220px; object-fit: cover; }
-.photo-card .name-tag { margin-top: 15px; font-family: 'Pacifico', cursive; color: #444; text-align: center; font-size: 1.1rem; }
+.photo-card { 
+    background: white; padding: 15px 15px 45px 15px; 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1); border: 1px solid #ddd; 
+    transition: transform 0.3s ease; cursor: pointer;
+}
+.photo-card:hover { transform: scale(1.05) rotate(0deg) !important; z-index: 10; box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
+.photo-card img { width: 100%; height: 220px; object-fit: cover; border-radius: 2px; }
+.photo-card .name-tag { 
+    margin-top: 15px; font-family: 'Pacifico', cursive; color: #444; 
+    text-align: center; font-size: 1.1rem; 
+}
 
-/* --- 美化上传组件 --- */
-.interaction-section { background: white; padding: 30px; border: 3px dashed var(--christmas-green); max-width: 800px; margin: 20px auto; text-align: center; }
+/* =========================================
+   4. 美化上传组件
+   ========================================= */
+.interaction-section { 
+    background: white; padding: 30px; border: 3px dashed var(--christmas-green); 
+    max-width: 800px; margin: 40px auto; text-align: center; border-radius: 20px;
+}
 #photo-file { display: none; }
-.btn-choose { background: var(--modern-black); color: white; padding: 10px 25px; border-radius: 50px; cursor: pointer; display: inline-block; margin-right: 10px; }
-.btn-submit { background: var(--christmas-red); color: white; border: none; padding: 12px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+.btn-choose { 
+    background: var(--modern-black); color: white; padding: 10px 25px; 
+    border-radius: 50px; cursor: pointer; display: inline-block; margin-right: 10px;
+    transition: 0.3s;
+}
+.btn-choose:hover { opacity: 0.8; }
+.btn-submit { 
+    background: var(--christmas-red); color: white; border: none; 
+    padding: 12px 40px; border-radius: 50px; font-weight: bold; 
+    cursor: pointer; transition: 0.3s; 
+}
+.btn-submit:hover { transform: scale(1.05); background: var(--christmas-green); }
 .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
 
-#debug-panel { max-width: 800px; margin: 40px auto; background: #333; color: #0f0; padding: 15px; font-family: monospace; font-size: 12px; border-radius: 10px; opacity: 0.8; }
+#debug-panel { 
+    max-width: 800px; margin: 40px auto; background: #333; color: #0f0; 
+    padding: 15px; font-family: monospace; font-size: 12px; border-radius: 10px; opacity: 0.8; 
+}
