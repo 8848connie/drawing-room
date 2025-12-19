@@ -3,351 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎄 圣诞照片墙 | Merry Christmas 🎁</title>
-    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&family=Pacifico&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --christmas-red: #d42426;
-            --christmas-green: #165b33;
-            --christmas-gold: #f8b229;
-            --soft-pink: #fce4ec;
-            --modern-black: #2d3436;
-            --sky-blue: #a2d2ff;
-            --soft-blue: #bde0fe;
-        }
-
-        * {
-            box-sizing: border-box;
-            border-radius: 20px; /* 全局圆角风格 */
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--soft-pink);
-            color: var(--modern-black);
-            overflow-x: hidden;
-        }
-
-        /* --- 登录注册小窗口 --- */
-        #auth-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .auth-card {
-            width: 400px;
-            background-color: #ffffff;
-            padding: 30px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            position: relative;
-            /* 👇 下面这里可以替换成你想要的登录窗口背景图 */
-background-image: linear-gradient(rgba(255, 182, 193, 0.8), rgba(162, 210, 255, 0.8)), 
-                      url('https://images.unsplash.com/photo-1543589077-47d81606c1bf?auto=format&fit=crop&w=800&q=80'); 
-    background-size: cover;
-    background-position: center;
-    border: 4px solid var(--modern-black);
-        }
-
-        .auth-card h2 {
-            text-align: center;
-            color: var(--modern-black);
-            margin-bottom: 20px;
-        }
-
-        .auth-card input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 2px solid var(--modern-black);
-            background: white;
-            border-radius: 15px;
-        }
-
-        .auth-card button {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--modern-black);
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
-            transition: transform 0.2s;
-        }
-
-        .auth-card button:hover {
-            transform: scale(1.05);
-            background-color: var(--sky-blue);
-            color: var(--modern-black);
-        }
-
-        /* --- 主页面内容 (登录后显示) --- */
-        #main-content {
-            display: none; /* 初始隐藏 */
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        header {
-            text-align: center;
-            padding: 40px 0;
-        }
-
-        .welcome-title {
-            font-family: 'ZCOOL KuaiLe', cursive;
-            font-size: 3rem;
-            color: var(--christmas-red);
-            margin: 0;
-        }
-
-        .welcome-subtitle {
-            font-family: 'Pacifico', cursive;
-            font-size: 1.5rem;
-            color: var(--christmas-green);
-            margin-bottom: 30px;
-        }
-
-        /* --- 照片墙 --- */
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px;
-            margin-top: 40px;
-        }
-
-        .photo-card {
-            background: white;
-            padding: 15px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease;
-            border-bottom: 5px solid var(--christmas-gold);
-        }
-
-        .photo-card:hover {
-            transform: translateY(-10px) rotate(2deg);
-        }
-
-        .photo-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 15px;
-        }
-
-        .photo-info {
-            margin-top: 10px;
-            font-size: 0.9rem;
-            color: var(--christmas-green);
-            font-weight: bold;
-        }
-
-        /* --- 上传与留言板 --- */
-        .interaction-section {
-            background: white;
-            padding: 30px;
-            margin-top: 50px;
-            border: 3px dashed var(--christmas-green);
-        }
-
-        .interaction-section h3 {
-            color: var(--christmas-red);
-        }
-
-        textarea {
-            width: 100%;
-            height: 100px;
-            padding: 15px;
-            border: 2px solid var(--soft-pink);
-            background: #fafafa;
-            margin-top: 10px;
-            resize: none;
-        }
-
-        .btn-upload {
-            background-color: var(--christmas-green);
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-
-        /* --- 调试日志区 --- */
-        #debug-panel {
-            margin-top: 50px;
-            background: #eee;
-            padding: 15px;
-            font-family: monospace;
-            font-size: 12px;
-            border-radius: 10px;
-            border: 1px solid #ccc;
-        }
-    </style>
+    <title>🎄 圣诞照片墙 | PhotoWall</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Pacifico&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <div id="auth-overlay">
         <div class="auth-card">
-            <h2>🎄 圣诞派对入口</h2>
-            <input type="text" id="username-input" placeholder="请输入你的名字 (注册名)">
-            <input type="password" placeholder="设置你的圣诞暗号 (密码)">
-            <button onclick="handleLogin()">进入派对</button>
-            <p style="text-align: center; font-size: 12px; margin-top: 10px; color: #555;">
-                * 这里的背景图可以在代码中替换 ☝️
-            </p>
+            <div class="lang-switch">
+                <span onclick="switchLang('zh')">ZH</span> | <span onclick="switchLang('en')">EN</span>
+            </div>
+            <h2 id="t-auth-title">🎄 圣诞派对入口</h2>
+            <input type="text" id="username-input" placeholder="你的名字 Name">
+            <button onclick="handleLogin()" id="t-login-btn">进入派对</button>
         </div>
+    </div>
+
+    <div id="transition-layer">
+        <div class="tree-wrap">
+            <div class="star-top"></div>
+            <div class="integrated-tree"></div>
+            <div class="trunk"></div>
+        </div>
+        <div class="loading-text" id="t-loading">正在布置派对现场...</div>
     </div>
 
     <div id="main-content">
         <header>
-            <div id="greeting-box">
-                <h1 class="welcome-title" id="display-name">圣诞快乐</h1>
-                <p class="welcome-subtitle" id="display-name-en">Merry Christmas!</p>
-            </div>
+            <h1 id="welcome-msg" class="welcome-title">圣诞快乐</h1>
+            <p class="welcome-subtitle">Merry Christmas!</p>
         </header>
 
         <section class="interaction-section">
-            <h3>🎁 投递你的圣诞照片</h3>
+            <h3 id="t-upload-title">🎁 投递圣诞记忆</h3>
             <form id="uploadForm">
-                <input type="file" id="photo-file" accept="image/*" required>
-                <button type="submit" class="btn-upload" id="submit-btn">立即上传</button>
+                <div class="file-custom-area">
+                    <label for="photo-file" class="btn-choose" id="t-choose-btn">选择照片</label>
+                    <input type="file" id="photo-file" accept="image/*" required>
+                    <span id="file-name-info">未选择文件</span>
+                </div>
+                <button type="submit" class="btn-submit" id="t-submit-btn">立即上传</button>
             </form>
-            <p id="upload-status-text"></p>
+            <p id="upload-status"></p>
         </section>
 
-        <div class="photo-grid" id="photo-grid">
-            <div class="photo-card">
-                <p style="text-align:center; padding:20px;">正在从雪地里搬运照片...</p>
-            </div>
-        </div>
-
-        <section class="interaction-section">
-            <h3>💬 圣诞留言板</h3>
-            <textarea placeholder="在这里写下你的愿望或祝福..."></textarea>
-            <button class="btn-upload">发送祝福</button>
-        </section>
+        <div class="photo-grid" id="photo-grid"></div>
 
         <div id="debug-panel">
-            <strong>🛠 系统安全检查日志：</strong>
-            <div id="debug-log">等待操作...</div>
+            <strong>System Log:</strong>
+            <div id="debug-log">Ready...</div>
         </div>
     </div>
 
-    <script>
-        let currentUserName = "";
-
-function logDebug(msg) {
-    const log = document.getElementById('debug-log');
-    log.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
-}
-
-// 处理登录逻辑
-function handleLogin() {
-    const nameInput = document.getElementById('username-input').value;
-    if (!nameInput) {
-        alert("请先输入名字哦！");
-        return;
-    }
-    currentUserName = nameInput;
-    
-    document.getElementById('auth-overlay').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
-    
-    document.getElementById('display-name').textContent = `${currentUserName}，圣诞快乐！`;
-    document.getElementById('display-name-en').textContent = `Merry Christmas, ${currentUserName}!`;
-    
-    logDebug(`用户 ${currentUserName} 登录成功，正在加载资源...`);
-    loadPhotos();
-}
-
-// 加载照片列表
-async function loadPhotos() {
-    try {
-        // 💡 修改点 1：使用简短的 /api 路径，配合 netlify.toml 的重定向
-        const res = await fetch('/api/get-photos'); 
-        const data = await res.json();
-        const grid = document.getElementById('photo-grid');
-        grid.innerHTML = ''; 
-
-        if (data.length === 0) {
-            grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">雪地上还没有脚印，快去上传第一张照片吧！</p>';
-        } else {
-            data.forEach(photo => {
-                grid.innerHTML += `
-                    <div class="photo-card">
-                        <img src="${photo.url}" alt="圣诞照片">
-                        <div class="photo-info">来自：${photo.name}</div>
-                    </div>
-                `;
-            });
-        }
-        logDebug("照片墙数据同步完成。");
-    } catch (err) {
-        logDebug(`❌ 加载照片墙失败: ${err.message}`);
-    }
-}
-
-// 处理上传逻辑
-document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const fileInput = document.getElementById('photo-file');
-    const submitBtn = document.getElementById('submit-btn');
-    const statusText = document.getElementById('upload-status-text');
-
-    if (!fileInput.files[0]) return;
-
-    submitBtn.disabled = true;
-    statusText.textContent = "🟡 正在打包礼物并寄给云端...";
-    logDebug("开始上传流程...");
-
-    const formData = new FormData();
-    formData.append('photo', fileInput.files[0]);
-    formData.append('uploader-name', currentUserName);
-
-    try {
-        // 💡 修改点 2：路径改为 /api/upload，并增加超时处理逻辑
-        const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData
-        });
-
-        const rawText = await response.clone().text();
-        logDebug(`服务器响应状态: ${response.status}`);
-
-        if (!response.ok) {
-            throw new Error(`服务器拒绝了请求: ${rawText.substring(0, 50)}`);
-        }
-
-        logDebug("✅ 服务器已确认接收，正在同步数据库...");
-        statusText.textContent = "✨ 礼物已送达！正在挂上照片墙 (2s)...";
-
-        // 💡 修改点 3：增加 2 秒延时刷新。
-        // 因为 Cloudinary 存储和数据库索引需要一点点时间，立即刷新可能看不到新图。
-        setTimeout(async () => {
-            await loadPhotos(); 
-            statusText.textContent = "🎊 圣诞墙已自动更新！";
-            logDebug("照片墙自动刷新完成");
-        }, 2000);
-
-        e.target.reset();
-    } catch (err) {
-        logDebug(`❌ 上传出错: ${err.message}`);
-        statusText.textContent = "❌ 糟糕，麋鹿迷路了，请重试。";
-    } finally {
-        submitBtn.disabled = false;
-    }
-});
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
