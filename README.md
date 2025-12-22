@@ -3,6 +3,7 @@
 
 一个用于呈现图片的静态网址，可以全球访问。仅用于connie和她的朋友们。
 
+
 🎄实现功能：
 1.全球可访问
 2.图片上传，及时刷新在页面
@@ -17,8 +18,11 @@
 
 ✨✨✨✨✨✨✨🎄🎄🎄🎄🎋🎋🎋🎄🎄🎄🎄🎄✨✨✨🎉🎉🎉🎉🎉✨✨🎠🎠🎠🎇🎇🎇🎆🎆🎆🎆✨✨✨✨✨🎋🎋🎄🎄🎄🎄🎄🎄🎋🎋✨✨✨✨🎋🎋🎋🎄🎄🎉🎉🎉🎉🎉🎄🎋✨✨✨✨✨✨✨✨✨✨
 
+
 A static website used to display pictures, accessible worldwide. Only for Connie and her friends.
+
 Functionalities to be achieved:
+
 1. Global accessibility
 2. Image upload with real-time refresh on the page
 3. Display of historical records and uploaded images each time the page is opened
@@ -29,8 +33,11 @@ Functionalities to be achieved:
 
 
 ✨✨✨✨✨✨✨🎄🎄🎄🎄🎋🎋🎋🎄🎄🎄🎄🎄✨✨✨🎉🎉🎉🎉🎉✨✨🎠🎠🎠🎇🎇🎇🎆🎆🎆🎆✨✨✨✨✨🎋🎋🎄🎄🎄🎄🎄🎄🎋🎋✨✨✨✨🎋🎋🎋🎄🎄🎉🎉🎉🎉🎉🎄🎋✨✨✨✨✨✨✨✨✨✨
+
 Una URL estática para mostrar imágenes, accesible globalmente. Solo para Connie y sus amigos.
+
 Funcionalidades implementadas:
+
 1. Accesible globalmente
 2. Subida de imágenes y actualización inmediata en la página
 3. Mostrar el historial y las imágenes subidas cada vez que se abre
